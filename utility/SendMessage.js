@@ -1,15 +1,6 @@
 const nodemailer = require("nodemailer");
 
-const sendMail = (
-  title,
-  courseTeacher,
-  course,
-  description,
-  date,
-  time,
-  room,
-  studentMails
-) => {
+const SendMessage = (title, description, studentMails) => {
   const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: "587",
@@ -28,18 +19,13 @@ const sendMail = (
     subject: title,
     html: `
       <p> ${description}</p>
-      <br />
-      <p>This will coducted by ${courseTeacher}</p>
-      <p>Date:  ${date} </p>
-      <p>Time:  ${time} </p>
-      <p>Room No.: ${room} </p>
-            <br />
+    <br />
       <p>Regards</p>
       <small>CR, CSE JNU,Batch-Ambiguity</small>
 
     `,
   };
-  transporter.sendMail(options, (error, info) => {
+  transporter.SendMessage(options, (error, info) => {
     if (error) {
       console.log(error);
     } else {
@@ -48,4 +34,4 @@ const sendMail = (
   });
 };
 
-module.exports = sendMail;
+module.exports = SendMessage;

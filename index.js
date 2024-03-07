@@ -14,6 +14,8 @@ app.get("/", (req, res) => {
 });
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const sendMail = require("./utility/Nodemail");
+const SendMessage = require("./utility/SendMessage");
 
 // const uri = "mongodb://0.0.0.0:27017/";
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.1ranzbu.mongodb.net/?retryWrites=true&w=majority`;
@@ -37,6 +39,30 @@ async function run() {
     const allnotes = allInformation.collection("notes");
     const allNotices = allInformation.collection("notices");
 
+    //  getting all students mail of cse13batch without endpoint here
+    const allStudentsMail = cse13batch.find(
+      {},
+      { projection: { email: 1, id: 1 } }
+    );
+    // const studentMails = [
+    //   "contact.ahsanul@gmail.com",
+    //   "contact.unmeshbd@gmail.com",
+    // ];
+    let studentMails = [];
+    while (await allStudentsMail.hasNext()) {
+      const students = await allStudentsMail.toArray();
+      students.map((student) => {
+        if (
+          student.email !== undefined &&
+          student.email !== null &&
+          student.email !== ""
+        ) {
+          studentMails.push(student.email);
+        }
+      });
+    }
+
+    // console.log(studentMails);
     // all functions related to students are here -------------------
     app.get("/allDataofCSE13", async (req, res) => {
       const cursor = cse13batch.find({});
@@ -192,10 +218,52 @@ async function run() {
       res.send(result);
       // console.log(data);
     });
-
+    app.patch("/updateNotice/:id", async (req, res) => {
+      const id = req.params.id;
+      const content = req.body;
+      const result = await allNotices.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: content }
+      );
+      res.send(result);
+    });
+    app.delete("/removeNotice/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const result = await allNotices.deleteOne({ _id: new ObjectId(id) });
+      res.send(result);
+    });
     // nodemailer
-    app.post("" / sendMail, async (req, res) => {
-      // const NodeMai
+    app.post("/sendMail", async (req, res) => {
+      const { info } = req.body;
+      const { title, courseTeacher, course, description, date, time, room } =
+        info;
+      try {
+        sendMail(
+          title,
+          courseTeacher,
+          course,
+          description,
+          date,
+          time,
+          room,
+          studentMails
+        );
+        res.send("Mail sent successfully");
+      } catch (err) {
+        res.send("Mail sent failed");
+      }
+      // console.log(info);
+    });
+    app.post("/SendAMessageViaMail", async (req, res) => {
+      let { message } = req.body;
+      const { subject, description } = message;
+      try {
+        SendMessage(subject, description, studentMails);
+        res.send("Mail sent successfully");
+      } catch (error) {
+        res.send("Mail sent failed");
+      }
     });
     // --------------------------------------------------
     // Send a ping to confirm a successful connection
