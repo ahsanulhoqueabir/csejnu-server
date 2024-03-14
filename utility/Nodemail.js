@@ -2,9 +2,10 @@ const nodemailer = require("nodemailer");
 
 const sendMail = (
   title,
+  description,
   courseTeacher,
   course,
-  description,
+
   date,
   time,
   room,
@@ -29,10 +30,11 @@ const sendMail = (
     html: `
       <p> ${description}</p>
       <br />
-      <p>This will coducted by ${courseTeacher}</p>
-      <p>Date:  ${date} </p>
-      <p>Time:  ${time} </p>
-      <p>Room No.: ${room} </p>
+      ${courseTeacher && `<p>This will coducted by ${courseTeacher}</p>`}
+      ${date && `<p>Date: ${date} </p>`}
+      ${time && `<p>Time: ${time} </p>`}
+      ${room && `<p>Room No.: ${room} </p>`}
+      
             <br />
       <p>Regards</p>
       <small>CR, CSE JNU,Batch-Ambiguity</small>
