@@ -241,9 +241,9 @@ async function run() {
       try {
         sendMail(
           title,
+          description,
           courseTeacher,
           course,
-          description,
           date,
           time,
           room,
@@ -257,9 +257,11 @@ async function run() {
     });
     app.post("/SendAMessageViaMail", async (req, res) => {
       let { message } = req.body;
-      const { subject, description } = message;
+      const { title, description } = message;
+      // console.log(title, description);
       try {
-        SendMessage(subject, description, studentMails);
+        // SendMessage(title, description, studentMails);
+        sendMail(title, description, "", "", "", "", "", studentMails);
         res.send("Mail sent successfully");
       } catch (error) {
         res.send("Mail sent failed");
