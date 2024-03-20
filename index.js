@@ -1,7 +1,10 @@
 const cors = require("cors");
 const express = require("express");
 const port = process.env.PORT || 3000;
-
+const fs = require("fs");
+const { google } = require("googleapis");
+const apikeys = require("./apikey.json");
+const SCOPE = ["https://www.googleapis.com/auth/drive"];
 // middlewire for data parsing and cors
 const app = express();
 app.use(cors());
@@ -161,6 +164,27 @@ async function run() {
       res.send(result);
       // console.log(data);
     });
+    app.get("/myNotes", async (req, res) => {
+      const query = req.query.email;
+      const userID = await cse13batch.findOne({ email: query });
+      const cursor = allnotes.find({ id: userID.id });
+      const notes = await cursor.toArray();
+      res.send(notes);
+    });
+    app.patch("/updateNotes", async (req, res) => {
+      const id = req.body.id;
+      const content = req.body;
+      const result = await allnotes.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: content }
+      );
+      res.send(result);
+    });
+    app.delete("/removeNotes/:id", async (req, res) => {
+      const noteID = req.params.id;
+      const result = await allnotes.deleteOne({ _id: new ObjectId(noteID) });
+      res.send(result);
+    });
 
     // ----------------- All notice related function are here -------------------------
     app.get("/allNotices", async (req, res) => {
@@ -278,7 +302,42 @@ async function run() {
   }
 }
 run().catch(console.log);
-
+// ----------------------------------------------------------------------
+// ----------------- file upload function -------------------------------
+// ----------------------------------------------------------------------
+app.post("/uploadFile", async (req, res) => {
+  const { name, type } = req.body;
+  const jwtClient = new google.auth.JWT(
+    apikeys.client_email,
+    null,
+    apikeys.private_key,
+    SCOPE
+  );
+  await jwtClient.authorize();
+  const drive = google.drive({ version: "v3", auth: jwtClient });
+  var fileMetaData = {
+    name: name,
+    parents: ["1tXD8zMx9VWZecyhlJcdr6Jp30YtNXsHL"], // A folder ID to which file will get uploaded
+  };
+  drive.files.create(
+    {
+      resource: fileMetaData,
+      media: {
+        body: fs.createReadStream(name), // files that will get uploaded
+        mimeType: type,
+      },
+      fields: "id",
+    },
+    function (error, file) {
+      if (error) {
+        res.send(error);
+      } else {
+        res.send(file);
+      }
+    }
+  );
+  console.log(name, type);
+});
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
 });
